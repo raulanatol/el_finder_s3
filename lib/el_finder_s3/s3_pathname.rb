@@ -146,7 +146,13 @@ module ElFinderS3
       if prefix_s[prefix_s.size-1] != '/'
         prefix_s = prefix_s + '/'
       end
-      return prefix_s
+      prefix_s
+    end
+
+    def to_file_prefix_s
+      result = to_prefix_s
+      result[-1] = '' unless result[-1] != '/'
+      result
     end
 
     def pipe?

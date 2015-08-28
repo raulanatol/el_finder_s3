@@ -1,7 +1,3 @@
-#
-# http://elrte.org/redmine/projects/elfinder/wiki/Client-Server_Protocol_EN
-#
-
 require 'logger'
 require 'base64'
 
@@ -22,7 +18,7 @@ module ElFinderS3
       :mime_handler => ElFinderS3::MimeType,
       :image_handler => ElFinderS3::Image,
       :original_filename_method => lambda { |file| file.original_filename.respond_to?(:force_encoding) ? file.original_filename.force_encoding('utf-8') : file.original_filename },
-      :disabled_commands => ['archive', 'duplicate', 'extract', 'resize', 'tmb'],
+      :disabled_commands => %w(archive duplicate extract resize tmb),
       :allow_dot_files => true,
       :upload_max_size => '50M',
       :name_validator => lambda { |name| name.strip != '.' && name =~ /^[^\x00-\x1f\\?*:"><|\/]+$/ },
@@ -270,7 +266,8 @@ module ElFinderS3
 
       file = @target + @params[:name]
       if !file.exist? && file.touch
-        @response[:added] = [cdc_for(file)]
+        @response[:select] = [to_hash(file)]
+        _open(@target)
       else
         @response[:error] = "Unable to create file"
       end

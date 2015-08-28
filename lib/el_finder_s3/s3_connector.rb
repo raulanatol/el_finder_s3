@@ -76,5 +76,14 @@ module ElFinderS3
         false
       end
     end
+
+    def touch(filename)
+      begin
+        @s3_client.put_object(bucket: @bucket_name, key: filename)
+        true
+      rescue
+        false
+      end
+    end
   end
 end

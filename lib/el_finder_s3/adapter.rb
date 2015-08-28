@@ -3,37 +3,19 @@ module ElFinderS3
     attr_reader :connection, :server, :s3_connector
 
     def initialize(server)
-      # @server = {
-      #   response_cache_expiry_seconds: 30,
-      #   passive: false,
-      # }.merge(server)
       @server = {
-        response_cache_expiry_seconds: 30
+        response_cache_expiry_seconds: 3000
       }
       @cached_responses = {}
       @s3_connector = ElFinderS3::S3Connector.new server
     end
 
     def connect
-      unless connected?
-        #FIXME
-        # ElFinderS3::Connector.logger.info "  \e[1;32mFTP:\e[0m  Connecting to #{server[:host]} as #{server[:username]}"
-        # @connection = Net::FTP.new(server[:host], server[:username], server[:password])
-        # @connection.passive = server[:passive]
-      end
-
       @connection
     end
 
     def close
-      if connected?
-        ElFinderS3::Connector.logger.info "  \e[1;32mFTP:\e[0m  Closing connection to #{server[:host]}"
-        @connection.close
-      end
-    end
-
-    def connected?
-      self.connection && !self.connection.closed?
+      true
     end
 
     def children(pathname, with_directory)
@@ -43,21 +25,7 @@ module ElFinderS3
     end
 
     def touch(pathname, options={})
-      #FIXME
-      # unless exist?(pathname)
-      #   ftp_context do
-      #     ElFinderS3::Connector.logger.debug "  \e[1;32mFTP:\e[0m    Touching #{pathname}"
-      #     empty_file = StringIO.new("")
-      #     File does not exist, create
-      # begin
-      #   storlines("STOR #{pathname}", empty_file)
-      # ensure
-      #   empty_file.close
-      # end
-      # end
-      # clear_cache(pathname)
-      # end
-      true
+      @s3_connector.touch(pathname.to_file_prefix_s)
     end
 
     def exist?(pathname)
@@ -200,33 +168,6 @@ module ElFinderS3
     end
 
     private
-
-    def ftp_context(pathname = nil, &block)
-      begin
-        #FIXME
-        # connect
-
-        # self.connection.chdir(pathname) unless pathname.nil?
-
-        # self.connection.instance_eval &block
-      rescue Net::FTPPermError => ex
-        if ex.message =~ /(?:User cannot log in|Login incorrect)/
-          ElFinderS3::Connector.logger.info "  \e[1;32mFTP:\e[0m    Authentication required: #{ex}"
-          raise FtpAuthenticationError.new(ex.message)
-        else
-          ElFinderS3::Connector.logger.error "  \e[1;32mFTP:\e[0m    Operation failed with error #{ex}"
-          raise
-        end
-      rescue Net::FTPReplyError => ex
-        if ex.message =~ /(?:Password required|Login incorrect)/
-          ElFinderS3::Connector.logger.info "  \e[1;32mFTP:\e[0m    Authentication required: #{ex}"
-          raise FtpAuthenticationError.new(ex.message)
-        else
-          ElFinderS3::Connector.logger.error "  \e[1;32mFTP:\e[0m    Operation failed with error #{ex}"
-          raise
-        end
-      end
-    end
 
     ##
     # Remove all entries for the given pathname (and its parent folder)
