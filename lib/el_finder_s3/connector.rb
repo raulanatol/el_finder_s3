@@ -313,24 +313,24 @@ module ElFinderS3
 
     #
     def _upload
-      if perms_for(@target)[:write] == false
+      if perms_for(@current)[:write] == false
         @response[:error] = 'Access Denied'
         return
       end
-      added_list = []
+      select = []
       @params[:upload].to_a.each do |io|
         name = @options[:original_filename_method].call(io)
         unless valid_name?(name)
           @response[:error] = 'Unable to create file'
           return
         end
-        dst = @target + name
+        dst = @current + name
 
         dst.write(io)
 
-        added_list.push cdc_for(dst)
+        select << to_hash(dst)
       end
-      @response[:added] = added_list unless added_list.empty?
+      @response[:select] = select unless select.empty?
       _open(@current)
     end
 

@@ -153,18 +153,8 @@ module ElFinderS3
     end
 
     def store(pathname, content)
-      #FIXME
-      # ftp_context do
-      #   ElFinderS3::Connector.logger.debug "  \e[1;32mFTP:\e[0m    Storing #{pathname}"
-      #   If content is a string, wrap it in a StringIO
-      # content = StringIO.new(content) if content.is_a? String
-      # begin
-      #   storbinary("STOR #{pathname}", content, 10240)
-      # ensure
-      #   content.close if content.respond_to?(:close)
-      # end
-      # end
-      # clear_cache(pathname)
+      @s3_connector.store(pathname.to_file_prefix_s, content)
+      #TODO clear_cache(pathname)
     end
 
     private

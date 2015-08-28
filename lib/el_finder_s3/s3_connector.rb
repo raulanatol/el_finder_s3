@@ -85,5 +85,9 @@ module ElFinderS3
         false
       end
     end
+
+    def store(filename, content)
+      @s3_client.put_object(bucket: @bucket_name, key: filename, body: content)
+    end
   end
 end
