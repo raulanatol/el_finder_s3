@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'shellwords'
 require 'image_size'
+require 'mini_magick'
 
 module ElFinderS3
 
@@ -17,12 +18,15 @@ module ElFinderS3
 
     def self.resize(pathname, options = {})
       return nil unless File.exist?(pathname)
-      system( ::Shellwords.join(['mogrify', '-resize', "#{options[:width]}x#{options[:height]}!", pathname.to_s]) )
-    end # of self.resize
+      system(::Shellwords.join(['mogrify', '-resize', "#{options[:width]}x#{options[:height]}!", pathname.to_s]))
+    end
 
-    def self.thumbnail(src, dst, options = {})
-      return nil unless File.exist?(src)
-      system( ::Shellwords.join(['convert', '-resize', "#{options[:width]}x#{options[:height]}", '-background', 'white', '-gravity', 'center', '-extent', "#{options[:width]}x#{options[:height]}", src.to_s, dst.to_s]) )
+    # of self.resize
+
+    def self.thumbnail(imgSourcePath, dst, options = {})
+      image = MiniMagick::Image.open(imgSourcePath)
+      image.resize "#{options[:width]}x#{options[:height]}"
+      dst.write(image)
     end # of self.resize
 
   end # of class Image

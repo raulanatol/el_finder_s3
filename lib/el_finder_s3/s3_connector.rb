@@ -54,7 +54,7 @@ module ElFinderS3
     def exist?(pathname)
       query = {
         bucket: @bucket_name,
-        key: pathname.to_prefix_s
+        key: pathname.file? ? pathname.to_file_prefix_s : pathname.to_prefix_s
       }
       begin
         @s3_client.head_object(query)
@@ -83,7 +83,16 @@ module ElFinderS3
     end
 
     def store(filename, content)
-      @s3_client.put_object(bucket: @bucket_name, key: filename, body: content, acl: 'public-read')
+      if content.is_a?(MiniMagick::Image)
+        @s3_client.put_object(bucket: @bucket_name, key: filename, body: content.to_blob, acl: 'public-read')
+      elsif @s3_client.put_object(bucket: @bucket_name, key: filename, body: content, acl: 'public-read')
+      end
+    end
+
+    def get(filename)
+      response = @s3_client.get_object(bucket: @bucket_name, key: filename)
+      return nil unless !response.nil?
+      response.body
     end
   end
 end

@@ -137,19 +137,7 @@ module ElFinderS3
     end
 
     def retrieve(pathname)
-      #FIXME
-      # ftp_context do
-      #   ElFinderS3::Connector.logger.debug "  \e[1;32mFTP:\e[0m    Retrieving #{pathname}"
-      #   content = StringIO.new()
-      #   begin
-      #     retrbinary("RETR #{pathname}", 10240) do |block|
-      #       content << block
-      #     end
-      #     content.string
-      #   ensure
-      #     content.close
-      #   end
-      # end
+      @s3_connector.get(pathname.to_file_prefix_s)
     end
 
     def store(pathname, content)

@@ -103,7 +103,9 @@ module ElFinderS3
 
           begin
             send("_#{@params[:cmd]}")
-          rescue Net::FTPPermError
+          rescue Exception => exception
+            puts exception.message
+            puts exception.backtrace.inspect
             @response[:error] = 'Access Denied'
           end
         else
@@ -465,7 +467,26 @@ module ElFinderS3
 
     #
     def _tmb
-      command_not_implemented
+      if image_handler.nil?
+        command_not_implemented
+      else
+        @response[:current] = to_hash(@current)
+        @response[:images] = {}
+        idx = 0
+        @current.children.select { |e| mime_handler.for(e) =~ /image/ }.each do |img|
+          if (idx >= @options[:thumbs_at_once])
+            @response[:tmb] = true
+            break
+          end
+          thumbnail = thumbnail_for(img)
+          unless thumbnail.exist? && thumbnail.file?
+            imgSourcePath = @options[:url] + '/' + img.path.to_s
+            image_handler.thumbnail(imgSourcePath, thumbnail, :width => @options[:thumbs_size].to_i, :height => @options[:thumbs_size].to_i)
+            @response[:images][to_hash(img)] = @options[:url] + '/' + thumbnail.path.to_s
+            idx += 1
+          end
+        end
+      end
     end
 
     # of tmb
@@ -500,7 +521,9 @@ module ElFinderS3
 
     #
     def thumbnail_for(pathname)
-      @thumb_directory + "#{to_hash(pathname)}.png"
+      result = @thumb_directory + "#{to_hash(pathname)}.png"
+      result.type(:file)
+      result
     end
 
     #
