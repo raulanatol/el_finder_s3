@@ -42,10 +42,17 @@ module ElFinderS3
     def initialize(options)
       @options = DEFAULT_OPTIONS.merge(options)
 
-      raise(ArgumentError, "Missing required :url option") unless @options.key?(:url)
-      raise(ArgumentError, "Missing required :server option") unless @options.key?(:server)
-      raise(ArgumentError, "Mime Handler is invalid") unless mime_handler.respond_to?(:for)
-      raise(ArgumentError, "Image Handler is invalid") unless image_handler.nil? || ([:size, :resize, :thumbnail].all? { |m| image_handler.respond_to?(m) })
+      raise(ArgumentError, 'Missing required :url option') unless @options.key?(:url)
+      raise(ArgumentError, 'Missing required :server option') unless @options.key?(:server)
+      raise(ArgumentError, 'Mime Handler is invalid') unless mime_handler.respond_to?(:for)
+      raise(ArgumentError, 'Image Handler is invalid') unless image_handler.nil? || ([:size, :resize, :thumbnail].all? { |m| image_handler.respond_to?(m) })
+
+      raise(ArgumentError, 'Missing required :region option') unless @options[:server].key?(:region)
+      raise(ArgumentError, 'Missing required :access_key_id option') unless @options[:server].key?(:access_key_id)
+      raise(ArgumentError, 'Missing required :secret_access_key option') unless @options[:server].key?(:secret_access_key)
+      raise(ArgumentError, 'Missing required :bucket_name option') unless @options[:server].key?(:bucket_name)
+
+      @options[:url] = 'https://' + @options[:server][:bucket] + '.s3.amazonaws.com' unless @options.key?(:url)
 
       @headers = {}
       @response = {}

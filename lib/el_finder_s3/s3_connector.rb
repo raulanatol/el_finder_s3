@@ -6,10 +6,6 @@ module ElFinderS3
     :bucket_name
 
     def initialize(server)
-      raise(ArgumentError, 'Missing required :region option') unless server.key?(:region)
-      raise(ArgumentError, 'Missing required :access_key_id option') unless server.key?(:access_key_id)
-      raise(ArgumentError, 'Missing required :secret_access_key option') unless server.key?(:secret_access_key)
-      raise(ArgumentError, 'Missing required :bucket_name option') unless server.key?(:bucket_name)
       Aws.config.update(
         {
           region: server[:region],
@@ -36,10 +32,10 @@ module ElFinderS3
       #Files
       response.contents.each { |e|
         if e.key != prefix
+          e.key = e.key.gsub(prefix, '')
           if with_directory
             result.push(pathname.fullpath + ::ElFinderS3::S3Pathname.new(self, e))
           else
-            e.key = e.key.gsub(prefix, '')
             result.push(::ElFinderS3::S3Pathname.new(self, e))
           end
         end
@@ -87,7 +83,7 @@ module ElFinderS3
     end
 
     def store(filename, content)
-      @s3_client.put_object(bucket: @bucket_name, key: filename, body: content)
+      @s3_client.put_object(bucket: @bucket_name, key: filename, body: content, acl: 'public-read')
     end
   end
 end
