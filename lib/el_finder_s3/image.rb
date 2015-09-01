@@ -25,7 +25,12 @@ module ElFinderS3
 
     def self.thumbnail(imgSourcePath, dst, options = {})
       image = MiniMagick::Image.open(imgSourcePath)
-      image.resize "#{options[:width]}x#{options[:height]}"
+      image.combine_options do |c|
+        c.thumbnail "#{options[:width]}x#{options[:height]}"
+        c.background 'white'
+        c.gravity 'center'
+        c.extent "#{options[:width]}x#{options[:height]}"
+      end
       dst.write(image)
     end # of self.resize
 

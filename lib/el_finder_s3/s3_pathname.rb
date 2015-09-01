@@ -94,6 +94,10 @@ module ElFinderS3
       @type ||= adapter.path_type(self)
     end
 
+    def type=(value)
+      @type = value
+    end
+
     def size
       unless @type == :directory
         @size ||= adapter.size(self)

@@ -36,6 +36,7 @@ module ElFinderS3
 
     def type(type)
       @type = type
+      fullpath.type = type
     end
 
     #
@@ -64,6 +65,25 @@ module ElFinderS3
     def relative?
       @path.relative?
     end
+
+    def exist?
+      realpath.exist?
+    rescue Errno::ENOENT
+      false
+    end
+
+    def directory?
+      realpath.directory?
+    rescue Errno::ENOENT
+      false
+    end
+
+    def file?
+      realpath.file?
+    rescue Errno::ENOENT
+      false
+    end
+
 
     # of relative?
 
@@ -107,13 +127,6 @@ module ElFinderS3
     #
     def basename_sans_extension
       @path.basename(@path.extname)
-    end
-
-    # of basename
-
-    #
-    def basename(*args)
-      @path.basename(*args)
     end
 
     # of basename
@@ -220,9 +233,6 @@ module ElFinderS3
     # of rename
 
     {
-      'directory?' => {:path => 'realpath', :rescue => true},
-      'exist?' => {:path => 'realpath', :rescue => true},
-      'file?' => {:path => 'realpath', :rescue => true},
       'ftype' => {:path => 'realpath', },
       'mkdir' => {:path => 'fullpath', :args => '(*args)'},
       'mtime' => {:path => 'realpath', },
