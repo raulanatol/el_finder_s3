@@ -1,6 +1,7 @@
 # require 'fileutils'
 # require 'net/ftp'
 
+require 'el_finder_s3/operations'
 require 'el_finder_s3/cache_connector'
 require 'el_finder_s3/adapter'
 require 'el_finder_s3/railties'

@@ -16,8 +16,7 @@ module ElFinderS3
       @s3_client = Aws::S3::Client.new
     end
 
-    # @param [ElFinderS3::Pathname] pathname
-    def ls_la(pathname, with_directory)
+    def ls_la(pathname)
       prefix = pathname.to_prefix_s
       query = {
         bucket: @bucket_name,
@@ -28,23 +27,23 @@ module ElFinderS3
       }
 
       response = @s3_client.list_objects(query)
-      result = []
+      result = {
+        :folders => [],
+        :files => []
+      }
+
       #Files
       response.contents.each { |e|
         if e.key != prefix
           e.key = e.key.gsub(prefix, '')
-          if with_directory
-            result.push(pathname.fullpath + ::ElFinderS3::S3Pathname.new(self, e))
-          else
-            result.push(::ElFinderS3::S3Pathname.new(self, e))
-          end
+          result[:files].push(e[:key])
         end
       }
       #Folders
       response.common_prefixes.each { |f|
         if f.prefix != '' && f.prefix != prefix && f.prefix != '/'
           f.prefix = f.prefix.split('/').last
-          result.push(pathname.fullpath + ::ElFinderS3::S3Pathname.new(self, f))
+          result[:folders].push(f[:prefix])
         end
       }
       return result

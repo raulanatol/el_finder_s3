@@ -1,27 +1,48 @@
 module ElFinderS3
+  require 'cache'
+
+  class DummyCacheClient
+    def get
+      nil
+    end
+
+    def set
+      nil
+    end
+
+    def delete
+      nil
+    end
+  end
+
   class CacheConnector
 
-    def ls_folder(folder)
-      raise 'This is not implemented!'
+    def initialize(client)
+      @cache = Cache.wrap(client)
     end
 
-    def tree_for(root)
-      raise 'This is not implemented!'
+    def cache_hash(operation, pathname)
+      Base64.urlsafe_encode64("#{operation}::#{pathname}").chomp.tr("=\n", "")
     end
 
-    def mkdirSuccess(folder)
-      raise 'This is not implemented!'
+    def cached(operation, pathname)
+      cache_hash_key = cache_hash(operation, pathname)
+      response = @cache.get(cache_hash_key)
+      unless response.nil?
+        return response
+      end
+
+      response = yield
+
+      @cache.set(cache_hash_key, response)
+
+      response
     end
 
-    def list_objects search_parameters
-      raise 'This is not implemented!'
+    def clear_cache(pathname)
+      ElFinderS3::Operations.each do |operation|
+        @cache.delete cache_hash(operation, pathname)
+      end
     end
-
-
-
-    def update_ls_folder_results query, response
-      raise 'This is not implemented!'
-    end
-
   end
 end

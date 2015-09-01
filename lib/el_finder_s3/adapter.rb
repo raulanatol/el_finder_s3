@@ -1,17 +1,24 @@
 module ElFinderS3
-  class Adapter
-    attr_reader :connection, :server, :s3_connector
+  require 'memcached'
+  require 'cache'
 
-    def initialize(server)
+  class Adapter
+    attr_reader :server, :s3_connector
+
+    def initialize(server, cache_connector)
       @server = {
         response_cache_expiry_seconds: 3000
       }
       @cached_responses = {}
       @s3_connector = ElFinderS3::S3Connector.new server
-    end
+      if cache_connector.nil?
+        @cache_connector = ElFinderS3::CacheConnector.new(ElFinderS3::DummyCacheClient.new)
+      else
+        @cache_connector = cache_connector
+      end
 
-    def connect
-      @connection
+      # client = Memcached.new('127.0.0.1:11211', :binary_protocol => true)
+      # @cache = Cache.wrap(client)
     end
 
     def close
@@ -19,9 +26,22 @@ module ElFinderS3
     end
 
     def children(pathname, with_directory)
-      cached :children, pathname do
-        @s3_connector.ls_la(pathname, with_directory)
+      elements = @cache_connector.cached ElFinderS3::Operations::CHILDREN, pathname do
+        @s3_connector.ls_la(pathname)
       end
+
+      result = []
+      elements[:folders].each { |folder|
+        result.push(pathname.fullpath + ElFinderS3::S3Pathname.new(@s3_connector, folder, {:type => :directory}))
+      }
+      elements[:files].each { |file|
+        if with_directory
+          result.push(pathname.fullpath + ElFinderS3::S3Pathname.new(@s3_connector, file, {:type => :file}))
+        else
+          result.push(ElFinderS3::S3Pathname.new(@s3_connector, file, {:type => :file}))
+        end
+      }
+      result
     end
 
     def touch(pathname, options={})
@@ -29,14 +49,14 @@ module ElFinderS3
     end
 
     def exist?(pathname)
-      cached :exist?, pathname do
+      @cache_connector.cached :exist?, pathname do
         @s3_connector.exist? pathname
       end
     end
 
     # @param [ElFinderS3::Pathname] pathname
     def path_type(pathname)
-      cached :path_type, pathname do
+      @cache_connector.cached :path_type, pathname do
         result = :directory
         begin
           if pathname.to_s == '/'
@@ -51,7 +71,7 @@ module ElFinderS3
 
     def size(pathname)
       #FIXME
-      # cached :size, pathname do
+      # @cache_connector.cached :size, pathname do
       #   ftp_context do
       #     ElFinderS3::Connector.logger.debug "  \e[1;32mFTP:\e[0m    Getting size of #{pathname}"
       #     begin
@@ -67,7 +87,7 @@ module ElFinderS3
 
     #FIXME
     def mtime(pathname)
-      cached :mtime, pathname do
+      @cache_connector.cached :mtime, pathname do
         # ftp_context do
         #   ElFinderS3::Connector.logger.debug "  \e[1;32mFTP:\e[0m    Getting modified time of #{pathname}"
         #   begin
@@ -143,68 +163,6 @@ module ElFinderS3
     def store(pathname, content)
       @s3_connector.store(pathname.to_file_prefix_s, content)
       #TODO clear_cache(pathname)
-    end
-
-    private
-
-    ##
-    # Remove all entries for the given pathname (and its parent folder)
-    # from the FTP cache
-    def clear_cache(pathname)
-      @cached_responses.delete(pathname.to_s)
-
-      if pathname.to_s != '/' && pathname.to_s != '.'
-        # Clear parent of this entry, too
-        @cached_responses.delete(pathname.dirname.to_s)
-      end
-    end
-
-    ##
-    # Looks in the cache for an entry for the given pathname and operation,
-    # returning the cached result if one is found.  If one is not found, the given
-    # block is invoked and its result is stored in the cache and returned
-    #
-    # The FTP cache is used to prevent redundant FTP queries for information such as a
-    # file's size, or a directory's contents, during a *single* FTP session.
-    def cached(operation, pathname)
-      response = cache_get(operation, pathname)
-      unless response.nil?
-        return response
-      end
-
-      response = yield
-      cache_put operation, pathname, response
-
-      response
-    end
-
-    ##
-    # Store an FTP response in the cache
-    def cache_put(operation, pathname, response)
-      @cached_responses[pathname.to_s] = {} unless @cached_responses.include?(pathname.to_s)
-
-      @cached_responses[pathname.to_s][operation] = {
-        timestamp: Time.now,
-        response: response
-      }
-    end
-
-    ##
-    # Fetch an FTP response from the cache
-    def cache_get(operation, pathname)
-      if @cached_responses.include?(pathname.to_s) && @cached_responses[pathname.to_s].include?(operation)
-        response = @cached_responses[pathname.to_s][operation]
-
-        #FIXME cache timeout
-        # max_staleness = Time.now - @server[:response_cache_expiry_seconds]
-
-        # if response[:timestamp] < max_staleness
-        #   @cached_responses[pathname.to_s].delete(operation)
-        #   nil
-        # else
-        response[:response]
-        # end
-      end
     end
   end
 end

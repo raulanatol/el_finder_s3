@@ -77,7 +77,7 @@ module ElFinderS3
     # @see VALID_COMMANDS
     def run(params)
 
-      @adapter = ElFinderS3::Adapter.new(@options[:server])
+      @adapter = ElFinderS3::Adapter.new(@options[:server], @options[:cache_connector])
       # @adapter = ElFinderS3::FtpAdapter.new(@options[:server])
       @root = ElFinderS3::Pathname.new(adapter)
 
