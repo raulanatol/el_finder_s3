@@ -11,12 +11,7 @@ module ElFinderS3
       }
       @cached_responses = {}
       @s3_connector = ElFinderS3::S3Connector.new server
-      if cache_connector.nil?
-        @cache_connector = ElFinderS3::CacheConnector.new(ElFinderS3::DummyCacheClient.new)
-      else
-        @cache_connector = cache_connector
-      end
-
+      @cache_connector = cache_connector.nil? ? ElFinderS3::CacheConnector.new : @cache_connector = cache_connector
       # client = Memcached.new('127.0.0.1:11211', :binary_protocol => true)
       # @cache = Cache.wrap(client)
     end
@@ -45,18 +40,20 @@ module ElFinderS3
     end
 
     def touch(pathname, options={})
-      @s3_connector.touch(pathname.to_file_prefix_s)
+      if @s3_connector.touch(pathname.to_file_prefix_s)
+        @cache_connector.clear_cache(pathname, false)
+        true
+      end
     end
 
     def exist?(pathname)
-      @cache_connector.cached :exist?, pathname do
+      @cache_connector.cached ElFinderS3::Operations::EXIST, pathname do
         @s3_connector.exist? pathname
       end
     end
 
-    # @param [ElFinderS3::Pathname] pathname
     def path_type(pathname)
-      @cache_connector.cached :path_type, pathname do
+      @cache_connector.cached ElFinderS3::Operations::PATH_TYPE, pathname do
         result = :directory
         begin
           if pathname.to_s == '/'
@@ -87,16 +84,9 @@ module ElFinderS3
 
     #FIXME
     def mtime(pathname)
-      @cache_connector.cached :mtime, pathname do
-        # ftp_context do
-        #   ElFinderS3::Connector.logger.debug "  \e[1;32mFTP:\e[0m    Getting modified time of #{pathname}"
-        #   begin
-        #     mtime(pathname.to_s)
-        #   rescue Net::FTPPermError => e
-        # This command doesn't work on directories
+      @cache_connector.cached ElFinderS3::Operations::MTIME, pathname do
+        #mtime(pathname.to_s)
         0
-        # end
-        # end
       end
     end
 
@@ -126,9 +116,7 @@ module ElFinderS3
 
     def mkdir(pathname)
       if @s3_connector.mkdir(pathname.to_prefix_s)
-        #FIXME review cache clear
-        # clear_cache(pathname)
-        true
+        @cache_connector.clear_cache(pathname)
       else
         false
       end

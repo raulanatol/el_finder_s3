@@ -34,9 +34,9 @@ module ElFinderS3
 
     # of initialize
 
-    def type(type)
-      @type = type
-      fullpath.type = type
+    def type=(value)
+      @type = value
+      fullpath.type = value
     end
 
     #

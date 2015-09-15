@@ -1,24 +1,9 @@
 module ElFinderS3
   require 'cache'
-
-  class DummyCacheClient
-    def get
-      nil
-    end
-
-    def set
-      nil
-    end
-
-    def delete
-      nil
-    end
-  end
-
   class CacheConnector
 
-    def initialize(client)
-      @cache = Cache.wrap(client)
+    def initialize(client = nil)
+      @cache = client.nil? ? ElFinderS3::DummyCacheClient.new : Cache.wrap(client)
     end
 
     def cache_hash(operation, pathname)
@@ -39,9 +24,16 @@ module ElFinderS3
       response
     end
 
-    def clear_cache(pathname)
+    def clear_cache(pathname, recursive = true)
       ElFinderS3::Operations.each do |operation|
         @cache.delete cache_hash(operation, pathname)
+      end
+
+      if recursive || pathname.file?
+        pathname_str = pathname.to_s
+        if pathname_str != '/' && pathname_str != '.'
+          clear_cache(pathname.dirname, recursive)
+        end
       end
     end
   end

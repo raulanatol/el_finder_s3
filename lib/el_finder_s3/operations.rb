@@ -5,11 +5,13 @@ module ElFinderS3
     PATH_TYPE = :path_type
     EXIST = :exist
     CHILDREN = :children
+    MTIME = :mtime
 
-    def each
+    def self.each
       yield PATH_TYPE
       yield EXIST
       yield CHILDREN
+      yield MTIME
     end
 
   end

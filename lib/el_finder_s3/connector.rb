@@ -274,6 +274,7 @@ module ElFinderS3
       end
 
       file = @target + @params[:name]
+      file.type = :file
       if !file.exist? && file.touch
         @response[:select] = [to_hash(file)]
         _open(@target)
@@ -522,7 +523,7 @@ module ElFinderS3
     #
     def thumbnail_for(pathname)
       result = @thumb_directory + "#{to_hash(pathname)}.png"
-      result.type(:file)
+      result.type = :file
       result
     end
 
