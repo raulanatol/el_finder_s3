@@ -93,5 +93,18 @@ module ElFinderS3
       return nil unless !response.nil?
       response.body
     end
+
+    def size(pathname)
+      query = {
+        bucket: @bucket_name,
+        key: pathname.file? ? pathname.to_file_prefix_s : pathname.to_prefix_s
+      }
+      begin
+        head = @s3_client.head_object(query)
+        head[:content_length]
+      rescue Aws::S3::Errors::NotFound
+        0
+      end
+    end
   end
 end

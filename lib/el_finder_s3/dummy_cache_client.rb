@@ -5,7 +5,7 @@ module ElFinderS3
       nil
     end
 
-    def set(key, value)
+    def set(key, value, ttl = 24.hours)
       nil
     end
 

@@ -55,31 +55,17 @@ module ElFinderS3
     def path_type(pathname)
       @cache_connector.cached ElFinderS3::Operations::PATH_TYPE, pathname do
         result = :directory
-        begin
-          if pathname.to_s == '/'
-            result = :directory
-          end
-        rescue
-          result = pathname[:type]
+        if pathname.to_s == '/'
+          result = :directory
         end
-        return result
+        result
       end
     end
 
     def size(pathname)
-      #FIXME
-      # @cache_connector.cached :size, pathname do
-      #   ftp_context do
-      #     ElFinderS3::Connector.logger.debug "  \e[1;32mFTP:\e[0m    Getting size of #{pathname}"
-      #     begin
-      #       size(pathname.to_s)
-      #     rescue Net::FTPPermError => e
-      #       nil
-      #     rescue Net::FTPReplyError => e
-      #       nil
-      #     end
-      #   end
-      # end
+      @cache_connector.cached :size, pathname do
+        @s3_connector.size(pathname)
+      end
     end
 
     #FIXME

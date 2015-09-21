@@ -12,16 +12,15 @@ module ElFinderS3
 
     def cached(operation, pathname)
       cache_hash_key = cache_hash(operation, pathname)
-      response = @cache.get(cache_hash_key)
-      unless response.nil?
-        return response
+      if @cache.exist? cache_hash_key
+        return @cache.get(cache_hash_key)
+      else
+        response = yield
+
+        @cache.set(cache_hash_key, response, 2.years)
+
+        response
       end
-
-      response = yield
-
-      @cache.set(cache_hash_key, response)
-
-      response
     end
 
     def clear_cache(pathname, recursive = true)

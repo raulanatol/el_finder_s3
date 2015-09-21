@@ -185,7 +185,9 @@ module ElFinderS3
 
     #
     def touch(options = {})
-      adapter.touch(cleanpath, options)
+      file2Touch = cleanpath
+      self.file? ? file2Touch.type = :file : file2Touch.type = :directory
+      adapter.touch(file2Touch, options)
     end
 
     #
