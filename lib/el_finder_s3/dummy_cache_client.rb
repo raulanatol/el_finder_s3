@@ -12,5 +12,9 @@ module ElFinderS3
     def delete(key)
       nil
     end
+
+    def exist?(key)
+      false
+    end
   end
 end
