@@ -44,7 +44,7 @@ module ElFinderS3
       if other.is_a? ::ElFinderS3::Pathname
         other = other.path
       end
-      self.class.new(@adapter, @path + other)
+      self.class.new(@adapter, (other.include?(@path.to_s) ? other : @path + other) )    #Change - last child is not showing up because of root dir added twice in the path
     end
 
     # of +

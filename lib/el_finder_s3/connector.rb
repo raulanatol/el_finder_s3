@@ -78,7 +78,7 @@ module ElFinderS3
     def run(params)
 
       @adapter = ElFinderS3::Adapter.new(@options[:server], @options[:cache_connector])
-      @root = ElFinderS3::Pathname.new(adapter)
+      @root = ElFinderS3::Pathname.new(adapter, @options[:root]) #Change - Pass the root dir here
 
       begin
         @params = params.dup
